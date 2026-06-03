@@ -25,11 +25,12 @@ export async function onRequestPost(context) {
       generationConfig: { maxOutputTokens: 4096 }
     };
 
+    // Ajuste para v1 estable: cambiamos systemInstruction por system_instruction
     if (body.system) {
-      geminiBody.systemInstruction = { parts: [{ text: body.system }] };
+      geminiBody.system_instruction = { parts: [{ text: body.system }] };
     }
 
-    // Llamamos a la API estable de Google Gemini (Actualizado a v1)
+    // Llamamos a la API estable de Google Gemini
     const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -59,6 +60,9 @@ export async function onRequestPost(context) {
     return new Response(
       JSON.stringify({ error: { message: "Error en el servidor proxy Gemini: " + error.message } }), 
       { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+}
     );
   }
 }

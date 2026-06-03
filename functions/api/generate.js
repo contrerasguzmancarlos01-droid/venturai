@@ -13,15 +13,11 @@ export async function onRequestPost(context) {
       parts: [{ text: msg.content }]
     }));
 
+    // Construimos el cuerpo sin el campo conflictivo
     const geminiBody = {
       contents: geminiContents,
       generationConfig: { maxOutputTokens: 4096 }
     };
-
-    // Corrección: Usar system_instruction con guion bajo
-    if (body.system) {
-      geminiBody.system_instruction = { parts: [{ text: body.system }] };
-    }
 
     const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',

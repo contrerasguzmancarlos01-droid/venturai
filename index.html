@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VenturAI</title>
+<style>
+  :root {
+    --bg: #0f0f1a; --card: #1a1a2e; --card2: #16213e;
+    --accent: #7c3aed; --accent2: #a855f7; --accent3: #06b6d4;
+    --text: #e2e8f0; --muted: #94a3b8; --border: #2d2d4e;
+    --success: #10b981; --danger: #ef4444;
+    --radius: 14px; --shadow: 0 8px 32px rgba(124,58,237,0.18);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+  header {
+    background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+    border-bottom: 1px solid var(--border); padding: 18px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px);
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { font-size: 28px; }
+  .logo-text { font-size: 22px; font-weight: 800; background: linear-gradient(135deg, var(--accent2), var(--accent3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .logo-sub { font-size: 11px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+  .lang-selector { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .lang-btn { background: var(--card); border: 1px solid var(--border); color: var(--muted); padding: 5px 10px; border-radius: 20px; cursor: pointer; font-size: 12px; transition: all .2s; white-space: nowrap; }
+  .lang-btn:hover, .lang-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  main { max-width: 800px; margin: 0 auto; padding: 36px 20px 60px; }
+  .hero { text-align: center; margin-bottom: 40px; }
+  .hero h1 { font-size: clamp(28px, 6vw, 48px); font-weight: 900; line-height: 1.1; margin-bottom: 12px; }
+  .hero h1 span { background: linear-gradient(135deg, var(--accent2), var(--accent3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .hero p { color: var(--muted); font-size: 16px; max-width: 480px; margin: 0 auto; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; margin-bottom: 24px; box-shadow: var(--shadow); }
+  .card-title { font-size: 16px; font-weight: 700; color: var(--accent2); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media(max-width: 540px) { .form-grid { grid-template-columns: 1fr; } }
+  .form-group { display: flex; flex-direction: column; gap: 7px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 13px; color: var(--muted); font-weight: 600; letter-spacing: .5px; }
+  input, select, textarea { background: var(--card2); border: 1px solid var(--border); color: var(--text); padding: 12px 14px; border-radius: 10px; font-size: 14px; width: 100%; transition: border-color .2s, box-shadow .2s; outline: none; font-family: inherit; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,58,237,.2); }
+  textarea { resize: vertical; min-height: 100px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 28px; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .2s; letter-spacing: .3px; }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; box-shadow: 0 4px 20px rgba(124,58,237,.4); width: 100%; margin-top: 8px; font-size: 16px; padding: 16px; }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(124,58,237,.5); }
+  .btn-secondary { background: var(--card2); border: 1px solid var(--border); color: var(--text); flex: 1; }
+  .btn-secondary:hover { border-color: var(--accent2); color: var(--accent2); }
+  .btn-cyan { background: linear-gradient(135deg, #0891b2, var(--accent3)); color: #fff; box-shadow: 0 4px 20px rgba(6,182,212,.3); flex: 1; }
+  .btn-cyan:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(6,182,212,.4); }
+  .btn-row { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+  #loading { display: none; text-align: center; padding: 60px 20px; }
+  .spinner { width: 52px; height: 52px; border: 4px solid var(--border); border-top-color: var(--accent2); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { color: var(--muted); font-size: 15px; }
+  .loading-dots::after { content: ''; animation: dots 1.5s steps(4, end) infinite; }
+  @keyframes dots { 0%,20%{content:'.'} 40%{content:'..'} 60%{content:'...'} 80%,100%{content:''} }
+  #result { display: none; }
+  .itinerary-box { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; box-shadow: var(--shadow); }
+  .itinerary-box h3 { color: var(--accent2); font-size: 20px; margin: 20px 0 8px; }
+  .itinerary-box h3:first-child { margin-top: 0; }
+  .itinerary-box h4 { color: var(--accent3); font-size: 16px; margin: 14px 0 6px; }
+  .itinerary-box p { color: var(--text); line-height: 1.7; margin-bottom: 10px; font-size: 14px; }
+  .itinerary-box ul { padding-left: 20px; margin-bottom: 12px; }
+  .itinerary-box li { color: #cbd5e1; line-height: 1.7; font-size: 14px; margin-bottom: 4px; }
+  #survey { margin-top: 32px; }
+  .survey-card { background: linear-gradient(135deg, #1a1a2e, #16213e); border: 1px solid var(--accent); border-radius: var(--radius); padding: 24px; position: relative; }
+  .survey-close { position: absolute; top: 14px; right: 14px; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; transition: color .2s; }
+  .survey-close:hover { color: var(--danger); }
+  .survey-q { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--text); }
+  .survey-options { display: flex; gap: 12px; flex-wrap: wrap; }
+  .survey-opt { background: var(--card2); border: 2px solid var(--border); color: var(--text); padding: 10px 24px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all .2s; }
+  .survey-opt.yes:hover, .survey-opt.yes.selected { border-color: var(--success); color: var(--success); background: rgba(16,185,129,.1); }
+  .survey-opt.no:hover, .survey-opt.no.selected { border-color: var(--danger); color: var(--danger); background: rgba(239,68,68,.1); }
+  .survey-textarea { width: 100%; margin-top: 14px; }
+  .survey-submit { margin-top: 12px; background: var(--accent); border: none; color: #fff; padding: 10px 24px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 700; transition: all .2s; }
+  .survey-submit:hover { background: var(--accent2); }
+  .survey-thanks { text-align: center; padding: 20px; }
+  .survey-thanks .emoji { font-size: 40px; display: block; margin-bottom: 12px; }
+  .survey-thanks p { color: var(--muted); font-size: 15px; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(124,58,237,.15); border: 1px solid rgba(124,58,237,.3); color: var(--accent2); padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
+  .error-box { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); color: #fca5a5; border-radius: 10px; padding: 14px 18px; font-size: 14px; margin-top: 12px; }
+</style>
+</head>
+<body>
+ 
+<header>
+  <div class="logo">
+    <span class="logo-icon">
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="18" cy="18" r="16" stroke="url(#cg1)" stroke-width="2"/>
+        <circle cx="18" cy="18" r="10" stroke="url(#cg1)" stroke-width="1.2" stroke-dasharray="2.5 2.5"/>
+        <polygon points="18,6 21,18 18,15 15,18" fill="url(#cg2)"/>
+        <polygon points="18,30 15,18 18,21 21,18" fill="#475569"/>
+        <line x1="4" y1="18" x2="32" y2="18" stroke="url(#cg1)" stroke-width="1" stroke-dasharray="3 3" opacity="0.4"/>
+        <line x1="18" y1="4" x2="18" y2="32" stroke="url(#cg1)" stroke-width="1" stroke-dasharray="3 3" opacity="0.4"/>
+        <circle cx="18" cy="18" r="2.2" fill="url(#cg2)"/>
+        <defs>
+          <linearGradient id="cg1" x1="2" y1="2" x2="34" y2="34" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#a855f7"/>
+            <stop offset="100%" stop-color="#06b6d4"/>
+          </linearGradient>
+          <linearGradient id="cg2" x1="15" y1="6" x2="21" y2="22" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#a855f7"/>
+            <stop offset="100%" stop-color="#06b6d4"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </span>
+    <div>
+      <div class="logo-text">VenturAI</div>
+      <div class="logo-sub" id="logo-sub">Tu compañero de viaje IA</div>
+    </div>
+  </div>
+  <div class="lang-selector" id="langSelector"></div>
+</header>
+ 
+<main>
+  <div class="hero" id="heroSection">
+    <h1 id="hero-title">Planifica desde una tarde libre hasta viajes largos de varias semanas.<br><span id="hero-span"></span></h1>
+    <p id="hero-desc">Introduce tus preferencias y genera un itinerario personalizado en segundos.</p>
+  </div>
+ 
+  <div id="formSection">
+    <div class="card">
+      <div class="card-title">📋 <span id="formTitle">Datos de tu viaje</span></div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label id="lbl-place">📍 Lugar de salida / destino</label>
+          <input type="text" id="place" placeholder="Ej: Madrid → Roma" />
+        </div>
+        <div class="form-group">
+          <label id="lbl-people">👥 Número de personas</label>
+          <input type="number" id="people" min="1" max="50" value="2" />
+        </div>
+        <div class="form-group">
+          <label id="lbl-duration">⏱️ Duración del viaje</label>
+          <input type="text" id="duration" placeholder="Ej: 5 días" />
+        </div>
+        <div class="form-group">
+          <label id="lbl-budget">💰 Presupuesto total</label>
+          <input type="text" id="budget" placeholder="Ej: 1500€" />
+        </div>
+        <div class="form-group full">
+          <label id="lbl-prefs">💬 Preferencias personales</label>
+          <textarea id="prefs" placeholder="Ej: Nos encanta la gastronomía local, museos, arquitectura..."></textarea>
+        </div>
+      </div>
+      <div id="formError"></div>
+      <button class="btn btn-primary" onclick="generateItinerary()">
+        <span>🚀</span><span id="btnText">Generar VenturA</span>
+      </button>
+    </div>
+  </div>
+ 
+  <div id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text"><span id="loadingMsg">Generando tu itinerario</span><span class="loading-dots"></span></div>
+  </div>
+ 
+  <div id="result">
+    <div class="badge">✨ <span id="badgeText">Itinerario generado por VenturAI</span></div>
+    <div class="itinerary-box" id="itineraryContent"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="regenerate()">🔄 <span id="regenText">Regenerar VenturA</span></button>
+      <button class="btn btn-cyan" onclick="resetApp()">✨ <span id="newText">Nueva VenturA</span></button>
+    </div>
+    <div id="survey"></div>
+  </div>
+</main>
+ 
+<script>
+const langs = {
+  es: {
+    code:'es', flag:'🇪🇸', name:'Español',
+    logoSub:'Tu compañero de viaje IA',
+    heroTitle:'Planifica desde una tarde libre hasta viajes largos de varias semanas.', heroSpan:'',
+    heroDesc:'Introduce tus preferencias y genera un itinerario personalizado en segundos.',
+    formTitle:'Datos de tu viaje',
+    lblPlace:'📍 Lugar de salida / destino', phPlace:'Ej: Madrid → Roma',
+    lblPeople:'👥 Número de personas',
+    lblDuration:'⏱️ Duración del viaje', phDuration:'Ej: 5 días',
+    lblBudget:'💰 Presupuesto total', phBudget:'Ej: 1500€',
+    lblPrefs:'💬 Preferencias personales', phPrefs:'Ej: Nos encanta la gastronomía local, museos...',
+    btnGenerate:'Generar VenturA', loading:'Generando tu itinerario',
+    badge:'Itinerario generado por VenturAI',
+    regenBtn:'Regenerar VenturA', newBtn:'Nueva VenturA',
+    errPlace:'Por favor, indica el lugar del viaje.',
+    errDuration:'Por favor, indica la duración.',
+    errBudget:'Por favor, indica el presupuesto.',
+    surveyQ1:'¿Te ha gustado VenturAI?', surveyYes:'Sí', surveyNo:'No',
+    surveyQ2Yes:'¿Volverías a usar VenturAI?', surveyQ2No:'¿Qué cambiarías de VenturAI?',
+    surveyPhFeedback:'Escribe aquí tu feedback...',
+    surveySubmit:'Enviar', surveyThanks:'¡Gracias por tu valoración! 🙏',
+    surveyThanksDesc:'Tu opinión nos ayuda a mejorar.',
+    promptRole:`Eres un experto planificador de viajes. Genera itinerarios detallados, realistas y personalizados en formato HTML usando solo etiquetas h3, h4, p, ul y li. No uses otras etiquetas HTML. Adapta todo al presupuesto, número de personas, duración y preferencias indicadas. Incluye sugerencias de alojamiento, transporte, actividades y gastronomía. Responde SOLO en español.`,
+  },
+  en: {
+    code:'en', flag:'🇬🇧', name:'English',
+    logoSub:'Your AI travel companion',
+    heroTitle:'Plan from a free afternoon to long trips of several weeks.', heroSpan:'',
+    heroDesc:'Enter your preferences and generate a personalised itinerary in seconds.',
+    formTitle:'Your trip details',
+    lblPlace:'📍 Origin / destination', phPlace:'E.g.: London → Paris',
+    lblPeople:'👥 Number of people',
+    lblDuration:'⏱️ Trip duration', phDuration:'E.g.: 5 days',
+    lblBudget:'💰 Total budget', phBudget:'E.g.: £1500',
+    lblPrefs:'💬 Personal preferences', phPrefs:'E.g.: We love local food, museums...',
+    btnGenerate:'Generate VenturA', loading:'Generating your itinerary',
+    badge:'Itinerary generated by VenturAI',
+    regenBtn:'Regenerate VenturA', newBtn:'New VenturA',
+    errPlace:'Please enter the trip destination.',
+    errDuration:'Please enter the duration.',
+    errBudget:'Please enter the budget.',
+    surveyQ1:'Did you enjoy VenturAI?', surveyYes:'Yes', surveyNo:'No',
+    surveyQ2Yes:'Would you use VenturAI again?', surveyQ2No:'What would you change?',
+    surveyPhFeedback:'Write your feedback here...',
+    surveySubmit:'Submit', surveyThanks:'Thank you for your feedback! 🙏',
+    surveyThanksDesc:'Your opinion helps us improve.',
+    promptRole:`You are an expert travel planner. Generate detailed, realistic and personalised itineraries in HTML format using only h3, h4, p, ul and li tags. Do not use other HTML tags. Adapt everything to the given budget, number of people, duration and preferences. Include suggestions for accommodation, transport, activities and gastronomy. Reply ONLY in English.`,
+  },
+  fr: {
+    code:'fr', flag:'🇫🇷', name:'Français',
+    logoSub:'Votre compagnon de voyage IA',
+    heroTitle:"Planifiez d'un après-midi libre à de longs voyages de plusieurs semaines.", heroSpan:'',
+    heroDesc:'Entrez vos préférences et générez un itinéraire personnalisé en quelques secondes.',
+    formTitle:'Détails de votre voyage',
+    lblPlace:'📍 Départ / destination', phPlace:'Ex: Paris → Rome',
+    lblPeople:'👥 Nombre de personnes',
+    lblDuration:'⏱️ Durée du voyage', phDuration:'Ex: 5 jours',
+    lblBudget:'💰 Budget total', phBudget:'Ex: 1500€',
+    lblPrefs:'💬 Préférences personnelles', phPrefs:'Ex: Nous aimons la gastronomie locale...',
+    btnGenerate:'Générer VenturA', loading:'Génération de votre itinéraire',
+    badge:'Itinéraire généré par VenturAI',
+    regenBtn:'Régénérer VenturA', newBtn:'Nouveau VenturA',
+    errPlace:'Veuillez indiquer la destination.',
+    errDuration:'Veuillez indiquer la durée.',
+    errBudget:'Veuillez indiquer le budget.',
+    surveyQ1:'Avez-vous aimé VenturAI?', surveyYes:'Oui', surveyNo:'Non',
+    surveyQ2Yes:'Utiliseriez-vous à nouveau VenturAI?', surveyQ2No:'Que changeriez-vous?',
+    surveyPhFeedback:'Écrivez vos commentaires ici...',
+    surveySubmit:'Envoyer', surveyThanks:'Merci pour votre avis! 🙏',
+    surveyThanksDesc:"Votre opinion nous aide à nous améliorer.",
+    promptRole:`Vous êtes un expert en planification de voyages. Générez des itinéraires détaillés en HTML en utilisant uniquement les balises h3, h4, p, ul et li. Répondez UNIQUEMENT en français.`,
+  },
+  de: {
+    code:'de', flag:'🇩🇪', name:'Deutsch',
+    logoSub:'Ihr KI-Reisebegleiter',
+    heroTitle:'Planen Sie von einem freien Nachmittag bis zu langen Reisen über mehrere Wochen.', heroSpan:'',
+    heroDesc:'Geben Sie Ihre Präferenzen ein und erstellen Sie in Sekunden einen persönlichen Reiseplan.',
+    formTitle:'Ihre Reisedaten',
+    lblPlace:'📍 Abfahrt / Ziel', phPlace:'z.B.: Berlin → Wien',
+    lblPeople:'👥 Anzahl der Personen',
+    lblDuration:'⏱️ Reisedauer', phDuration:'z.B.: 5 Tage',
+    lblBudget:'💰 Gesamtbudget', phBudget:'z.B.: 1500€',
+    lblPrefs:'💬 Persönliche Präferenzen', phPrefs:'z.B.: Wir lieben lokale Küche, Museen...',
+    btnGenerate:'VenturA generieren', loading:'Ihr Reiseplan wird erstellt',
+    badge:'Reiseplan erstellt von VenturAI',
+    regenBtn:'VenturA neu generieren', newBtn:'Neue VenturA',
+    errPlace:'Bitte geben Sie das Reiseziel an.',
+    errDuration:'Bitte geben Sie die Dauer an.',
+    errBudget:'Bitte geben Sie das Budget an.',
+    surveyQ1:'Hat Ihnen VenturAI gefallen?', surveyYes:'Ja', surveyNo:'Nein',
+    surveyQ2Yes:'Würden Sie VenturAI wieder nutzen?', surveyQ2No:'Was würden Sie ändern?',
+    surveyPhFeedback:'Schreiben Sie Ihr Feedback hier...',
+    surveySubmit:'Senden', surveyThanks:'Vielen Dank für Ihr Feedback! 🙏',
+    surveyThanksDesc:'Ihre Meinung hilft uns, uns zu verbessern.',
+    promptRole:`Sie sind ein Experte für Reiseplanung. Erstellen Sie detaillierte Reisepläne im HTML-Format mit nur h3, h4, p, ul und li Tags. Antworten Sie NUR auf Deutsch.`,
+  },
+  it: {
+    code:'it', flag:'🇮🇹', name:'Italiano',
+    logoSub:'Il tuo compagno di viaggio IA',
+    heroTitle:"Pianifica da un pomeriggio libero a lunghi viaggi di diverse settimane.", heroSpan:'',
+    heroDesc:'Inserisci le tue preferenze e genera un itinerario personalizzato in pochi secondi.',
+    formTitle:'Dettagli del tuo viaggio',
+    lblPlace:'📍 Partenza / destinazione', phPlace:'Es: Milano → Barcellona',
+    lblPeople:'👥 Numero di pessoas',
+    lblDuration:'⏱️ Durata del viaggio', phDuration:'Es: 5 giorni',
+    lblBudget:'💰 Budget totale', phBudget:'Es: 1500€',
+    lblPrefs:'💬 Referenze personali', phPrefs:'Es: Amiamo la gastronomia locale, i musei...',
+    btnGenerate:'Genera VenturA', loading:'Generazione del tuo itinerario',
+    badge:'Itinerario generato da VenturAI',
+    regenBtn:'Rigenera VenturA', newBtn:'Nuova VenturA',
+    errPlace:'Indica la destinazione del viaggio.',
+    errDuration:'Indica la durata.',
+    errBudget:'Indica il budget.',
+    surveyQ1:'Ti è piaciuto VenturAI?', surveyYes:'Sì', surveyNo:'No',
+    surveyQ2Yes:'Useresti di nuovo VenturAI?', surveyQ2No:'Cosa cambieresti?',
+    surveyPhFeedback:'Scrivi qui il tuo feedback...',
+    surveySubmit:'Invia', surveyThanks:'Grazie per il tuo feedback! 🙏',
+    surveyThanksDesc:'La tua opinione ci aiuta a migliorare.',
+    promptRole:`Sei un esperto pianificatore di viaggi. Genera itinerari dettagliati in formato HTML usando solo i tag h3, h4, p, ul e li. Rispondi SOLO in italiano.`,
+  },
+  pt: {
+    code:'pt', flag:'🇵🇹', name:'Português',
+    logoSub:'O seu companheiro de viagem IA',
+    heroTitle:'Planeie desde uma tarde livre até viagens longas de várias semanas.', heroSpan:'',
+    heroDesc:'Introduza as suas preferências e gere um itinerário personalizado em segundos.',
+    formTitle:'Dados da sua viagem',
+    lblPlace:'📍 Partida / destino', phPlace:'Ex: Lisboa → Roma',
+    lblPeople:'👥 Número de pessoas',
+    lblDuration:'⏱️ Duração da viagem', phDuration:'Ex: 5 dias',
+    lblBudget:'💰 Orçamento total', phBudget:'Ex: 1500€',
+    lblPrefs:'💬 Preferências pessoais', phPrefs:'Ex: Adoramos gastronomia local, museus...',
+    btnGenerate:'Gerar VenturA', loading:'A gerar o seu itinerário',
+    badge:'Itinerário gerado por VenturAI',
+    regenBtn:'Regenerar VenturA', newBtn:'Nova VenturA',
+    errPlace:'Indique o destino da viagem.',
+    errDuration:'Indique a duração.',
+    errBudget:'Indique o orçamento.',
+    surveyQ1:'Gostou do VenturAI?', surveyYes:'Sim', surveyNo:'Não',
+    surveyQ2Yes:'Voltaria a usar o VenturAI?', surveyQ2No:'O que mudaria?',
+    surveyPhFeedback:'Escreva aqui o seu feedback...',
+    surveySubmit:'Enviar', surveyThanks:'Obrigado pelo seu feedback! 🙏',
+    surveyThanksDesc:'A sua opinião ajuda-nos a melhorar.',
+    promptRole:`É um especialista em planeamento de viagens. Gere itinerários detalhados em formato HTML usando apenas as etiquetas h3, h4, p, ul e li. Responda APENAS em português.`,
+  }
+};
+
+let currentLang = 'es';
+let lastFormData = null;
+
+function init() {
+  renderLangButtons();
+  applyLang('es');
+}
+
+function renderLangButtons() {
+  const el = document.getElementById('langSelector');
+  el.innerHTML = Object.values(langs).map(l =>
+    `<button class="lang-btn${l.code===currentLang?' active':''}" onclick="applyLang('${l.code}')">${l.flag} ${l.name}</button>`
+  ).join('');
+}
+
+function applyLang(code) {
+  currentLang = code;
+  const t = langs[code];
+  document.getElementById('logo-sub').textContent = t.logoSub;
+  document.getElementById('hero-title').innerHTML = t.heroTitle + '<br><span id="hero-span">'+t.heroSpan+'</span>';
+  document.getElementById('hero-desc').textContent = t.heroDesc;
+  document.getElementById('formTitle').textContent = t.formTitle;
+  document.getElementById('lbl-place').textContent = t.lblPlace;
+  document.getElementById('lbl-people').textContent = t.lblPeople;
+  document.getElementById('lbl-duration').textContent = t.lblDuration;
+  document.getElementById('lbl-budget').textContent = t.lblBudget;
+  document.getElementById('lbl-prefs').textContent = t.lblPrefs;
+  document.getElementById('place').placeholder = t.phPlace;
+  document.getElementById('duration').placeholder = t.phDuration;
+  document.getElementById('budget').placeholder = t.phBudget;
+  document.getElementById('prefs').placeholder = t.phPrefs;
+  document.getElementById('btnText').textContent = t.btnGenerate;
+  document.getElementById('loadingMsg').textContent = t.loading;
+  document.getElementById('badgeText').textContent = t.badge;
+  document.getElementById('regenText').textContent = t.regenBtn;
+  document.getElementById('newText').textContent = t.newBtn;
+  renderLangButtons();
+}
+
+async function generateItinerary() {
+  const t = langs[currentLang];
+  const place = document.getElementById('place').value.trim();
+  const people = document.getElementById('people').value.trim();
+  const duration = document.getElementById('duration').value.trim();
+  const budget = document.getElementById('budget').value.trim();
+  const prefs = document.getElementById('prefs').value.trim();
+  const errEl = document.getElementById('formError');
+  
+  errEl.innerHTML = '';
+  if (!place)     { errEl.innerHTML = `<div class="error-box">⚠️ ${t.errPlace}</div>`; return; }
+  if (!duration)  { errEl.innerHTML = `<div class="error-box">⚠️ ${t.errDuration}</div>`; return; }
+  if (!budget)    { errEl.innerHTML = `<div class="error-box">⚠️ ${t.errBudget}</div>`; return; }
+  
+  lastFormData = { place, people, duration, budget, prefs };
+  showLoading();
+  await callAI(place, people, duration, budget, prefs);
+}
+
+async function regenerate() {
+  if (!lastFormData) return;
+  const { place, people, duration, budget, prefs } = lastFormData;
+  showLoading();
+  await callAI(place, people, duration, budget, prefs);
+}
+
+function showLoading() {
+  document.getElementById('formSection').style.display = 'none';
+  document.getElementById('heroSection').style.display = 'none';
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('loading').style.display = 'block';
+}
+
+async function callAI(place, people, duration, budget, prefs) {
+  const t = langs[currentLang];
+  const userPrompt = `Genera un itinerario de viaje completo y detallado con los siguientes datos:
+- Lugar: ${place}
+- Número de personas: ${people}
+- Duración: ${duration}
+- Presupuesto total: ${budget}
+- Preferencias: ${prefs || 'Sin preferencias específicas'}
+ 
+Crea un itinerario día a día con actividades, restaurantes, alojamiento y consejos de transporte. Adapta completamente las recomendaciones al presupuesto indicado.
+Usa únicamente etiquetas HTML h3, h4, p, ul, li. No incluyas etiquetas html, head, body ni ninguna otra.`;
+ 
+  try {
+    // CAMBIO CLAVE: Ahora llamamos a tu función de Cloudflare de forma segura
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        system: t.promptRole,
+        messages: [{ role: 'user', content: userPrompt }]
+      })
+    });
+ 
+    if (!res.ok) {
+      let errorMsg = `Error HTTP ${res.status}`;
+      try {
+        const err = await res.json();
+        errorMsg = err?.error?.message || errorMsg;
+      } catch(e) {}
+      showResult(`<p style="color:#fca5a5">⚠️ Error en el servidor proxy: ${errorMsg}</p>`);
+      return;
+    }
+ 
+    const data = await res.json();
+    let html = '';
+    
+    if (Array.isArray(data.content)) {
+      html = data.content
+        .filter(block => block.type === 'text')
+        .map(block => block.text)
+        .join('') || '<p>No se pudo generar el itinerario.</p>';
+    } else {
+      html = '<p style="color:#fca5a5">⚠️ Respuesta inesperada del servidor proxy.</p>';
+    }
+    showResult(html);
+  } catch(e) {
+    let msg = e.message || 'Error desconocido';
+    if (msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('networkerror')) {
+      msg = 'Error de red. Asegúrate de estar conectado a Internet.';
+    }
+    showResult(`<p style="color:#fca5a5">⚠️ Error de conexión: ${msg}</p>`);
+  }
+}
+ 
+function showResult(html) {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('itineraryContent').innerHTML = html;
+  document.getElementById('result').style.display = 'block';
+  document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+  renderSurvey();
+}
+ 
+function resetApp() {
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('formSection').style.display = 'block';
+  document.getElementById('heroSection').style.display = 'block';
+  document.getElementById('place').value = '';
+  document.getElementById('people').value = '2';
+  document.getElementById('duration').value = '';
+  document.getElementById('budget').value = '';
+  document.getElementById('prefs').value = '';
+  document.getElementById('formError').innerHTML = '';
+  document.getElementById('survey').innerHTML = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+ 
+function renderSurvey() {
+  const surveyEl = document.getElementById('survey');
+  surveyEl.innerHTML = '';
+  const t = langs[currentLang];
+  surveyEl.innerHTML = `
+    <div class="survey-card" id="surveyCard">
+      <button class="survey-close" onclick="closeSurvey()">✕</button>
+      <div id="surveyStep1">
+        <div class="survey-q">⭐ ${t.surveyQ1}</div>
+        <div class="survey-options">
+          <button class="survey-opt yes" onclick="surveyAnswer1('yes')">${t.surveyYes}</button>
+          <button class="survey-opt no" onclick="surveyAnswer1('no')">${t.surveyNo}</button>
+        </div>
+      </div>
+      <div id="surveyStep2" style="display:none"></div>
+    </div>`;
+}
+ 
+function surveyAnswer1(ans) {
+  const t = langs[currentLang];
+  const step2 = document.getElementById('surveyStep2');
+  document.getElementById('surveyStep1').style.display = 'none';
+  step2.style.display = 'block';
+  if (ans === 'yes') {
+    step2.innerHTML = `<div class="survey-q">🎉 ${t.surveyQ2Yes}</div>
+      <div class="survey-options">
+        <button class="survey-opt yes" onclick="surveyDone()">${t.surveyYes}</button>
+        <button class="survey-opt no" onclick="surveyDone()">${t.surveyNo}</button>
+      </div>`;
+  } else {
+    step2.innerHTML = `<div class="survey-q">💬 ${t.surveyQ2No}</div>
+      <textarea class="survey-textarea" id="surveyFeedback" placeholder="${t.surveyPhFeedback}" rows="3"></textarea>
+      <br><button class="survey-submit" onclick="surveyDone()">${t.surveySubmit}</button>`;
+  }
+}
+ 
+function surveyDone() {
+  const t = langs[currentLang];
+  try { localStorage.setItem('venturai_feedback_completed', '1'); } catch(e) {}
+  document.getElementById('surveyCard').innerHTML = `
+    <div class="survey-thanks">
+      <span class="emoji">🙏</span>
+     <p><strong>${t.surveyThanks}</strong></p>
+      <p>${t.surveyThanksDesc}</p>
+    </div>`;
+}
+ 
+function closeSurvey() {
+  try { localStorage.setItem('venturai_feedback_completed', '1'); } catch(e) {}
+  document.getElementById('survey').innerHTML = '';
+}
+init();
+</script>
+</body>
+</html>

@@ -5,12 +5,17 @@ export async function onRequestPost(context) {
   try {
     const body = await request.json();
 
-    // Estructura mínima obligatoria para Gemini 1.5
+    // Estructura mínima que Google garantiza que acepta
+    // Si tienes "system_instruction", asegúrate de que venga dentro de 'contents' 
+    // o quítalo de aquí para probar la conexión básica.
     const payload = {
       contents: body.contents
     };
 
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    // Usamos v1beta explícitamente porque es donde viven los modelos 1.5
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -18,8 +23,8 @@ export async function onRequestPost(context) {
 
     const data = await res.json();
 
-    // Si la respuesta de Google NO es exitosa, devolvemos el error tal cual
     if (!res.ok) {
+      // Si falla, devolvemos el error exacto de Google
       return new Response(JSON.stringify({ 
         error: "Google API Error", 
         details: data 
@@ -35,7 +40,6 @@ export async function onRequestPost(context) {
     });
 
   } catch (err) {
-    // Si el servidor falla antes de llegar a Google
-    return new Response(JSON.stringify({ error: "Server Error", details: err.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: "Local Server Error", details: err.message }), { status: 500 });
   }
 }

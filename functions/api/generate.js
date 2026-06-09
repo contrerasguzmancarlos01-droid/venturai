@@ -4,19 +4,25 @@ export async function onRequestPost(context) {
 
   try {
     const body = await request.json();
-    const { contents } = body;
+    
+    // FORZAMOS LA ESTRUCTURA MÍNIMA QUE PIDE GOOGLE
+    // Solo permitimos 'contents'. Eliminamos cualquier otra cosa que venga del frontend.
+    const cleanPayload = {
+      contents: body.contents
+    };
 
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents })
+      body: JSON.stringify(cleanPayload)
     });
 
     const data = await res.json();
 
     if (!res.ok) {
-      return new Response(JSON.stringify({ error: data.error?.message || "Error desconocido" }), {
-        status: res.status,
+      // Esto capturará el error específico de Google (ej: "Invalid JSON")
+      return new Response(JSON.stringify({ error: `API Error ${res.status}: ${JSON.stringify(data.error)}` }), {
+        status: 200, // Devolvemos 200 para que tu frontend pueda leer el JSON del error
         headers: { "Content-Type": "application/json" }
       });
     }
@@ -27,6 +33,6 @@ export async function onRequestPost(context) {
     });
 
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: "Error de servidor: " + err.message }), { status: 500 });
   }
 }

@@ -1,6 +1,5 @@
 export async function onRequestPost(context) {
   const { request, env } = context;
-  const apiKey = env.GEMINI_API_KEY;
 
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
@@ -11,43 +10,28 @@ export async function onRequestPost(context) {
   try {
     const body = await request.json();
 
-    // Validación básica
     if (!body.messages || !Array.isArray(body.messages)) {
       return new Response(
-        JSON.stringify({ error: "El campo 'messages' es requerido y debe ser un array" }),
+        JSON.stringify({ error: "El campo 'messages' es requerido" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    // Separar el mensaje de sistema del historial
-    const systemMessage = body.messages.find(m => m.role === 'system');
-    const conversationMessages = body.messages.filter(m => m.role !== 'system');
-
-    const geminiPayload = {
-      // Instrucción de sistema en su campo correcto
-      ...(systemMessage && {
-        systemInstruction: {
-          parts: [{ text: systemMessage.content }]
-        }
-      }),
-      contents: conversationMessages.map(msg => ({
-        role: msg.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: msg.content }]
-      }))
-    };
-
-    const url =`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(geminiPayload)
+    const response = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
+      messages: body.messages
     });
 
-    const data = await res.json();
+    // Devolvemos en el mismo formato que esperaba tu app de Gemini
+    const data = {
+      candidates: [{
+        content: {
+          parts: [{ text: response.response }]
+        }
+      }]
+    };
 
     return new Response(JSON.stringify(data), {
-      status: res.status,
+      status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders }
     });
 
@@ -59,7 +43,6 @@ export async function onRequestPost(context) {
   }
 }
 
-// Manejo del preflight CORS
 export async function onRequestOptions() {
   return new Response(null, {
     status: 204,

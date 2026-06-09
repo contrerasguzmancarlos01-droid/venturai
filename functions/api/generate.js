@@ -1,33 +1,25 @@
 export async function onRequestPost(context) {
-  const { request, env } = context;
+  const { env } = context;
   const apiKey = env.GEMINI_API_KEY;
 
   try {
-    // Definimos un payload estático de prueba para descartar errores del frontend
-    const testPayload = {
-      contents: [{
-        role: "user",
-        parts: [{ text: "Hola, ¿puedes saludar?" }]
-      }]
-    };
+    // Consultamos la lista de modelos permitidos
+    const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
 
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(testPayload)
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
     });
 
     const data = await res.json();
 
-    return new Response(JSON.stringify({ 
-      status: res.status, 
-      apiResponse: data 
-    }), { 
-      status: 200, 
-      headers: { "Content-Type": "application/json" } 
+    // Devolvemos la lista para que la veas en el navegador
+    return new Response(JSON.stringify(data), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
     });
 
   } catch (err) {
-    return new Response(JSON.stringify({ error: "Error critico", details: err.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: "Error", details: err.message }), { status: 500 });
   }
 }

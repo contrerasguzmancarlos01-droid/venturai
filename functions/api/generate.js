@@ -5,8 +5,7 @@ export async function onRequestPost(context) {
   try {
     const body = await request.json();
 
-    // --- TRANSFORMACIÓN DE FORMATO ---
-    // Convertimos el formato OpenAI (messages) al formato Gemini (contents)
+    // Estructura estándar de Google Gemini
     const geminiPayload = {
       contents: body.messages.map(msg => ({
         role: msg.role === 'system' || msg.role === 'assistant' ? 'model' : 'user',
@@ -14,12 +13,14 @@ export async function onRequestPost(context) {
       }))
     };
 
+    // Esta es la URL estándar y verificada. 
+    // Usamos v1beta para modelos recientes.
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(geminiPayload) // Enviamos el formato correcto
+      body: JSON.stringify(geminiPayload)
     });
 
     const data = await res.json();
@@ -30,6 +31,6 @@ export async function onRequestPost(context) {
     });
 
   } catch (err) {
-    return new Response(JSON.stringify({ error: "Error en el transformador", details: err.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: "Fallo en el proxy", details: err.message }), { status: 500 });
   }
 }

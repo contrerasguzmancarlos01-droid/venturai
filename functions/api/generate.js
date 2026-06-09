@@ -1,25 +1,28 @@
 export async function onRequestPost(context) {
-  const { env } = context;
+  const { request, env } = context;
   const apiKey = env.GEMINI_API_KEY;
 
   try {
-    // Consultamos la lista de modelos permitidos
-    const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+    const body = await request.json();
+    
+    // Usamos v1beta (donde sí existen los modelos) y el modelo exacto
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
     const res = await fetch(url, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
     });
 
     const data = await res.json();
 
-    // Devolvemos la lista para que la veas en el navegador
+    // Devolvemos el error completo a la consola para saber qué pasa
     return new Response(JSON.stringify(data), {
-      status: 200,
+      status: res.status,
       headers: { "Content-Type": "application/json" }
     });
 
   } catch (err) {
-    return new Response(JSON.stringify({ error: "Error", details: err.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: "Error de servidor", details: err.message }), { status: 500 });
   }
 }
